@@ -9,7 +9,8 @@
 ;; better repr for functions
 ;; add test cases
 ;; add test report (is (alike )
-
+;; any-of, none-of, count, other helpers?
+;; starts-with, ends-with, contains? regex?
 
 (def MISSING '<missing>)
 
