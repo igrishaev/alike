@@ -154,7 +154,9 @@
 
 
 
-(defmethod -match [clojure.lang.IPersistentSet clojure.lang.IPersistentSet]
+(defmethod -match
+  [java.util.Set java.util.Set]
+  #_[clojure.lang.IPersistentSet clojure.lang.IPersistentSet]
   [set1 set2]
   (or (set/subset? set1 set2)
       (mismatch set1 set2)))
@@ -261,33 +263,19 @@
 (prefer
  [java.util.Map java.util.Map]
  [clojure.lang.IFn clojure.lang.IPersistentCollection])
-
+#_
 (prefer
  [clojure.lang.IPersistentSet clojure.lang.IPersistentSet]
  [java.util.Set java.lang.Object])
-
+#_
 (prefer
  [clojure.lang.IPersistentSet clojure.lang.IPersistentSet]
  [clojure.lang.IFn java.lang.Object])
-
+#_
 (prefer
  [clojure.lang.IPersistentSet clojure.lang.IPersistentSet]
- [clojure.lang.IFn clojure.lang.IPersistentCollection]
- )
-
+ [clojure.lang.IFn clojure.lang.IPersistentCollection])
 #_
 (prefer
  [java.util.List java.lang.Object]
- [clojure.lang.IFn clojure.lang.IPersistentCollection]
- )
-
-
-
-
-
-
-(defn -main [& _]
-  (println (-match [1 int? 3] [1 :foo 3]))
-  #_
-  (println (-match [1 2 3 {:bar {:aaa [1 int? 3]}}] [1 2 3 {:foo 1 :bar {:aaa [1 :foo 3]}}]))
-  )
+ [clojure.lang.IFn clojure.lang.IPersistentCollection])

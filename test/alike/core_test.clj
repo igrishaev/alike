@@ -155,7 +155,6 @@
     (new MyRecord 1 2 3) {:a 1 :b 2}))
 
 (deftest test-sets
-  #_
   (are [a b] (true? (alike/match a b))
     #{1 2 3} #{1 2 3}
     #{} #{}
@@ -172,6 +171,7 @@
 
     )
 
+  #_
   (are [a b] (alike/mismatch? (alike/match a b))
     #{1 2 3} #{1 9 3}
 
@@ -179,7 +179,7 @@
 
 
 
-)
+    )
   )
 
 
