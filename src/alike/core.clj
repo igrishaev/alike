@@ -1,5 +1,6 @@
 (ns alike.core
   (:require
+   [clojure.data :as data]
    [clojure.set :as set]
    [clojure.string :as str]))
 
@@ -140,6 +141,9 @@
 (defmethod -match [java.util.Set java.util.Set]
   [set1 set2]
   ;; TODO: find diff
+  ;; (clojure.data/diff #{1 2 3 4} #{1 2 3 5})
+  ;; [#{4} #{5} #{1 3 2}]
+  ;; expected extra/missing
   (or (set/subset? set1 set2)
       (mismatch set1 set2)))
 
