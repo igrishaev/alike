@@ -76,7 +76,7 @@
       (mismatch expected actual)
 
       :else
-      result)))
+      true)))
 
 
 (defmethod -match [java.lang.Object java.lang.Object]
@@ -112,10 +112,27 @@
       (mismatch cls obj)))
 
 
+(defmethod -match [java.lang.Class java.lang.Class]
+  [cls1 clj2]
+  (or (= cls1 clj2)
+      (mismatch cls1 clj2)))
+
+
+(defmethod -match [clojure.lang.IFn nil]
+  [ifn obj]
+  (or (ifn obj)
+      (mismatch ifn obj)))
+
 (defmethod -match [clojure.lang.IFn java.lang.Object]
   [ifn obj]
   (or (ifn obj)
       (mismatch ifn obj)))
+
+
+(defmethod -match [clojure.lang.IFn clojure.lang.IPersistentCollection]
+  [ifn coll]
+  (or (ifn coll)
+      (mismatch ifn coll)))
 
 
 (defmethod -match [clojure.lang.IFn clojure.lang.IFn]
@@ -207,6 +224,10 @@
 
 (prefer-method -match
                [java.util.Map java.util.Map]
+               [clojure.lang.IFn clojure.lang.IFn])
+
+(prefer-method -match
+               [clojure.lang.IFn clojure.lang.IPersistentCollection]
                [clojure.lang.IFn clojure.lang.IFn])
 
 
