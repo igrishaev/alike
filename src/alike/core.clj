@@ -1,20 +1,11 @@
 (ns alike.core
   (:require
    [clojure.data :as data]
-   [clojure.set :as set]
    [clojure.string :as str]))
 
 
-;; add hint/reason message
-;; add matching options
-;; toString method -> function
-;; better repr for functions
-;; add test cases
-;; add test report (is (alike )
-;; any-of, none-of, count, other helpers?
-;; starts-with, ends-with, contains? regex?
-
 (def MISSING '<missing>)
+
 
 (defn class-name [obj]
   (some-> obj
@@ -140,12 +131,22 @@
 
 (defmethod -match [java.util.Set java.util.Set]
   [set1 set2]
-  ;; TODO: find diff
-  ;; (clojure.data/diff #{1 2 3 4} #{1 2 3 5})
-  ;; [#{4} #{5} #{1 3 2}]
-  ;; expected extra/missing
-  (or (set/subset? set1 set2)
-      (mismatch set1 set2)))
+  (let [[set1-only set2-only _both]
+        (data/diff set1 set2)]
+
+    (cond
+
+      (and set1-only set2-only)
+      (mismatch set1-only set2-only)
+
+      set1-only
+      (mismatch set1-only MISSING)
+
+      set2-only
+      (mismatch MISSING set2-only)
+
+      :else
+      true)))
 
 
 (defmethod -match [java.util.Map java.util.Map]
@@ -192,6 +193,53 @@
           [false true]
           (let [v2 (.next iter2)]
             (mismatch MISSING v2 i)))))))
+
+
+;;
+;; Arrays
+;;
+
+(def ^Class ARRAY_BOOL
+  (Class/forName "[Z"))
+
+(def ^Class ARRAY_BYTE
+  (Class/forName "[B"))
+
+(def ^Class ARRAY_CHAR
+  (Class/forName "[C"))
+
+(def ^Class ARRAY_DOUBLE
+  (Class/forName "[D"))
+
+(def ^Class ARRAY_FLOAT
+  (Class/forName "[F"))
+
+(def ^Class ARRAY_INT
+  (Class/forName "[I"))
+
+(def ^Class ARRAY_SHORT
+  (Class/forName "[S"))
+
+(def ^Class ARRAY_LONG
+  (Class/forName "[J"))
+
+(def ^Class ARRAY_OBJ
+  (Class/forName "[Ljava.lang.Object;"))
+
+
+(defmethod -match [java.util.List ARRAY_OBJ]
+  [list array]
+  (match list (vec array)))
+
+
+(defmethod -match [java.util.List ARRAY_INT]
+  [list array]
+  (match list (vec array)))
+
+
+(defmethod -match [java.util.List ARRAY_LONG]
+  [list array]
+  (match list (vec array)))
 
 
 (defn prefer [pair1 pair2]

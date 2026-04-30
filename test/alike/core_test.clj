@@ -158,28 +158,40 @@
   (are [a b] (true? (alike/match a b))
     #{1 2 3} #{1 2 3}
     #{} #{}
+    #{1} (java-set [1])
+    (java-set [1]) #{1}
+    #{1 2 3} 2)
 
-    #{} (java-set nil)
-    ;; (java-set {:a 1}) #{:a 1 :b 2}
-
-    #{1 2 3} 2
-
-    )
-
-  #_
   (are [a b] (alike/mismatch? (alike/match a b))
+    (java-set [1 2 3]) [1 2 3]
+    (java-set [1 2 3]) #{4}
     #{1 2 3} #{1 9 3}
+    #{1 2 3} :foo))
 
-    #{1 2 3} :foo
-
-
-
+(deftest test-arrays
+  (are [a b] (true? (alike/match a b))
+    [1 2 3] (object-array [1 2 3])
+    [1 2 3] (int-array [1 2 3])
+    [1 2 3] (long-array [1 2 3])
     )
+
+
+
   )
 
 
 
-;; sets
 ;; arrays
 ;; check representation
-;; better sets?
+
+;; add hint/reason message
+;; add matching options
+;; toString method -> function
+;; better repr for functions
+;; add test report (is (alike )
+;; any-of, none-of, count, other helpers?
+;; starts-with, ends-with, contains? regex?
+;; regex string
+
+;; mismatch: metter fn representation
+;; mismatch: missing repr
