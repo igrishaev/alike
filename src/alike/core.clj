@@ -3,6 +3,14 @@
    [clojure.string :as str]))
 
 
+;; add hint/reason message
+;; add matching options
+;; toString method -> function
+;; better repr for functions
+;; add test cases
+;; add test report (is (alike )
+
+
 (def MISSING '<missing>)
 
 (defn class-name [obj]
@@ -53,6 +61,21 @@
 (defmulti -match
   (fn [a b]
     [(type a) (type b)]))
+
+
+(defn match [expected actual]
+  (let [result (-match expected actual)]
+
+    (cond
+
+      (mismatch? result)
+      result
+
+      (not result)
+      (mismatch expected actual)
+
+      :else
+      result)))
 
 
 (defmethod -match [java.lang.Object java.lang.Object]
@@ -109,21 +132,6 @@
   [set obj]
   (or (contains? set obj)
       (mismatch set obj)))
-
-
-(defn match [expected actual]
-  (let [result (-match expected actual)]
-
-    (cond
-
-      (mismatch? result)
-      result
-
-      (not result)
-      (mismatch expected actual)
-
-      :else
-      result)))
 
 
 (defmethod -match [java.util.Map java.util.Map]
@@ -202,7 +210,7 @@
 
 
 (defn -main [& _]
-  (println (-match #{:foo :bar :baz} :bar2))
+  (println (-match [1 int? 3] [1 :foo 3]))
   #_
   (println (-match [1 2 3 {:bar {:aaa [1 int? 3]}}] [1 2 3 {:foo 1 :bar {:aaa [1 :foo 3]}}]))
   )
