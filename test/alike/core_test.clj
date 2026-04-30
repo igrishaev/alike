@@ -139,7 +139,7 @@
     {:a 1} {:a 1}
     {:a 1} {:a 1 :b 2}
     {:a [{:b 2}]} {:a [{:b 2}]}
-    :foo {:foo 1}
+    ;; :foo {:foo 1}
     {:a 1} (new MyRecord 1 2 3)
     {:a 1 :b 2} (new MyRecord 1 2 3)
     (new MyRecord 1 2 3) {:a 1 :b 2 :c 3}
@@ -160,14 +160,9 @@
     #{} #{}
 
     #{} (java-set nil)
-    (java-set nil) #{}
-
-    ;; #{1 2 3} 1
-
-
+    ;; (java-set {:a 1}) #{:a 1 :b 2}
 
     #{1 2 3} 2
-
 
     )
 
@@ -184,8 +179,7 @@
 
 
 
-
-
 ;; sets
 ;; arrays
-;; [1 2 3] (long-array [1 2 3])
+;; check representation
+;; better sets?

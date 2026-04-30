@@ -101,12 +101,6 @@
   true)
 
 
-(defmethod -match [clojure.lang.Keyword clojure.lang.Keyword]
-  [k1 k2]
-  (or (identical? k1 k2)
-      (mismatch k1 k2)))
-
-
 (defmethod -match [java.lang.Class java.lang.Object]
   [cls obj]
   (or (instance? cls obj)
@@ -119,32 +113,22 @@
       (mismatch cls1 clj2)))
 
 
-(defmethod -match [clojure.lang.IFn nil]
-  [ifn obj]
-  (or (ifn obj)
-      (mismatch ifn obj)))
-
-(defmethod -match [clojure.lang.IFn java.lang.Object]
-  [ifn obj]
-  (or (ifn obj)
-      (mismatch ifn obj)))
+(defmethod -match [clojure.lang.Fn nil]
+  [func the-nil]
+  (or (func the-nil)
+      (mismatch func the-nil)))
 
 
-(defmethod -match [clojure.lang.IFn clojure.lang.IPersistentCollection]
-  [ifn coll]
-  (or (ifn coll)
-      (mismatch ifn coll)))
+(defmethod -match [clojure.lang.Fn clojure.lang.Fn]
+  [func1 func2]
+  (or (= func1 func2)
+      (mismatch func1 func2)))
 
 
-(defmethod -match [clojure.lang.IFn clojure.lang.IFn]
-  [ifn1 ifn2]
-  (or (= ifn1 ifn2)
-      (mismatch ifn1 ifn2)))
-
-
-(defmethod -match [java.util.List java.lang.Object]
-  [l obj]
-  (mismatch l obj))
+(defmethod -match [clojure.lang.Fn java.lang.Object]
+  [func obj]
+  (or (func obj)
+      (mismatch func obj)))
 
 
 (defmethod -match [java.util.Set java.lang.Object]
@@ -153,11 +137,9 @@
       (mismatch set obj)))
 
 
-
-(defmethod -match
-  [java.util.Set java.util.Set]
-  #_[clojure.lang.IPersistentSet clojure.lang.IPersistentSet]
+(defmethod -match [java.util.Set java.util.Set]
   [set1 set2]
+  ;; TODO: find diff
   (or (set/subset? set1 set2)
       (mismatch set1 set2)))
 
@@ -210,72 +192,3 @@
 
 (defn prefer [pair1 pair2]
   (prefer-method -match pair1 pair2))
-
-(prefer
- [java.util.Set java.lang.Object]
- [clojure.lang.IFn clojure.lang.IFn])
-
-(prefer
- [java.util.Set java.lang.Object]
- [clojure.lang.IFn java.lang.Object])
-
-(prefer
- [java.util.Map java.util.Map]
- [clojure.lang.IFn java.lang.Object])
-
-(prefer
- [java.util.List java.util.List]
- [clojure.lang.IFn java.lang.Object])
-
-(prefer
- [java.util.List java.lang.Object]
- [clojure.lang.IFn java.lang.Object])
-
-(prefer
- [java.util.List java.util.List]
- [clojure.lang.IFn clojure.lang.IFn])
-
-(prefer
- [java.util.Map java.util.Map]
- [clojure.lang.IFn clojure.lang.IFn])
-
-(prefer
- [clojure.lang.IFn clojure.lang.IPersistentCollection]
- [clojure.lang.IFn clojure.lang.IFn])
-
-#_
-(prefer
- [clojure.lang.IFn clojure.lang.IPersistentCollection]
- [java.util.List java.util.List])
-
-(prefer
- [java.util.List java.util.List]
- [clojure.lang.IFn clojure.lang.IPersistentCollection])
-
-(prefer
- [java.util.List java.lang.Object]
- [clojure.lang.IFn clojure.lang.IPersistentCollection])
-
-(prefer
- [java.util.List java.lang.Object]
- [clojure.lang.IFn clojure.lang.IFn])
-
-(prefer
- [java.util.Map java.util.Map]
- [clojure.lang.IFn clojure.lang.IPersistentCollection])
-#_
-(prefer
- [clojure.lang.IPersistentSet clojure.lang.IPersistentSet]
- [java.util.Set java.lang.Object])
-#_
-(prefer
- [clojure.lang.IPersistentSet clojure.lang.IPersistentSet]
- [clojure.lang.IFn java.lang.Object])
-#_
-(prefer
- [clojure.lang.IPersistentSet clojure.lang.IPersistentSet]
- [clojure.lang.IFn clojure.lang.IPersistentCollection])
-#_
-(prefer
- [java.util.List java.lang.Object]
- [clojure.lang.IFn clojure.lang.IPersistentCollection])
