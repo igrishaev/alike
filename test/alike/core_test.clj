@@ -1,5 +1,6 @@
 (ns alike.core-test
   (:require
+   [alike.test]
    [clojure.test :refer [are is deftest testing]]
    [alike.core :as alike]))
 
@@ -173,10 +174,20 @@
     [1 2 3] (object-array [1 2 3])
     [1 2 3] (int-array [1 2 3])
     [1 2 3] (long-array [1 2 3])
-    )
+    ))
 
 
+(defn get-data []
+  {:foo {:bar [1 2 {:aaa nil} 4 5 ]}})
 
+
+(deftest test-foo
+  (is (alike {:foo {:bar [1 2 {:aaa 42} 4 5 ]}}
+             (get-data)
+
+             )
+      "foo bar baz"
+      )
   )
 
 

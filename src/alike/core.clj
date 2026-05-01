@@ -14,38 +14,55 @@
 
 
 (defprotocol IMismatch
-  (add-level [this level]))
+  (push-level [this level])
+  (explain [this])
+  (represent [this])
+  )
 
+(defmulti -explain :-tag)
 
-(deftype Mismatch [-expected
-                   -actual
-                   -path]
+(defmethod -explain :object-nil [_]
+  "Expected a non-nil value but got nil")
+
+(defrecord Mismatch [-expected
+                     -actual
+                     -tag
+                     -path]
   IMismatch
-  (add-level [_this level]
-    (new Mismatch -expected -actual (cons level -path)))
+  (push-level [_this level]
+    (new Mismatch -expected -actual -tag (cons level -path)))
 
-  Object
-  (toString [_this]
+  (explain [_this]
+    (case -tag
+
+      (:default :unknown)
+      "sdfdsdfds"
+
+      (:set-object)
+      "The expected set doesn't contain the actual value"
+
+      (:object-nil)
+      "Expected a non-nil value but got nil"
+
+      ;; default
+      "aaa"))
+
+  (represent [this]
     (with-out-str
-      (println "Mismatch")
-      (println)
-      (printf "  path     [%s]%n" (str/join " " -path))
-      (println)
-      (printf "  expected %s%n" -expected)
-      (when-let [cls (class-name -expected)]
-        (printf "    type   %s%n" cls))
-      (println)
-      (printf "  actual   %s%n" -actual)
-      (when-let [cls (class-name -actual)]
-        (printf "    type   %s%n" cls)))))
+      (println (-explain this))
+      (printf "  case %s%n" -tag)
+      (printf "  path [%s]%n" (str/join " " -path)))))
 
 
 (defn mismatch
   ([expected actual]
-   (new Mismatch expected actual nil))
+   (mismatch expected actual :mismatch))
 
-  ([expected actual level]
-   (new Mismatch expected actual [level])))
+  ([expected actual tag]
+   (new Mismatch expected actual tag nil))
+
+  ([expected actual tag level]
+   (new Mismatch expected actual tag [level])))
 
 
 (defn mismatch? [x]
@@ -66,7 +83,7 @@
       result
 
       (not result)
-      (mismatch expected actual)
+      (mismatch expected actual :unknown)
 
       :else
       true)))
@@ -75,17 +92,17 @@
 (defmethod -match [java.lang.Object java.lang.Object]
   [a b]
   (or (= a b)
-      (mismatch a b)))
+      (mismatch a b :object-object)))
 
 
 (defmethod -match [java.lang.Object nil]
   [a b]
-  (mismatch a b))
+  (mismatch a b :object-nil))
 
 
 (defmethod -match [nil java.lang.Object]
   [a b]
-  (mismatch a b))
+  (mismatch a b :nil-object))
 
 
 (defmethod -match [nil nil]
@@ -96,37 +113,37 @@
 (defmethod -match [java.lang.Class java.lang.Object]
   [cls obj]
   (or (instance? cls obj)
-      (mismatch cls obj)))
+      (mismatch cls obj :class-object)))
 
 
 (defmethod -match [java.lang.Class java.lang.Class]
   [cls1 clj2]
   (or (= cls1 clj2)
-      (mismatch cls1 clj2)))
+      (mismatch cls1 clj2 :class-class)))
 
 
 (defmethod -match [clojure.lang.Fn nil]
   [func the-nil]
   (or (func the-nil)
-      (mismatch func the-nil)))
+      (mismatch func the-nil :func-nil)))
 
 
 (defmethod -match [clojure.lang.Fn clojure.lang.Fn]
   [func1 func2]
   (or (= func1 func2)
-      (mismatch func1 func2)))
+      (mismatch func1 func2 :func-func)))
 
 
 (defmethod -match [clojure.lang.Fn java.lang.Object]
   [func obj]
   (or (func obj)
-      (mismatch func obj)))
+      (mismatch func obj :func-object)))
 
 
 (defmethod -match [java.util.Set java.lang.Object]
   [set obj]
   (or (contains? set obj)
-      (mismatch set obj)))
+      (mismatch set obj :set-object)))
 
 
 (defmethod -match [java.util.Set java.util.Set]
@@ -137,13 +154,13 @@
     (cond
 
       (and set1-only set2-only)
-      (mismatch set1-only set2-only)
+      (mismatch set1-only set2-only :set-set-both)
 
       set1-only
-      (mismatch set1-only MISSING)
+      (mismatch set1-only MISSING :set-set-left)
 
       set2-only
-      (mismatch MISSING set2-only)
+      (mismatch MISSING set2-only :set-set-right)
 
       :else
       true)))
@@ -156,9 +173,9 @@
      (if-let [[_ v2] (find m2 k)]
        (let [result (match v1 v2)]
          (if (mismatch? result)
-           (reduced (add-level result k))
+           (reduced (push-level result k))
            acc))
-       (reduced (mismatch k MISSING))))
+       (reduced (mismatch k MISSING :map-map))))
    true
    m1))
 
@@ -183,16 +200,16 @@
                 v2 (.next iter2)
                 result (match v1 v2)]
             (if (mismatch? result)
-              (add-level result i)
+              (push-level result i)
               (recur (inc i))))
 
           [true false]
           (let [v1 (.next iter1)]
-            (mismatch v1 MISSING i))
+            (mismatch v1 MISSING :list-list-miss-right i))
 
           [false true]
           (let [v2 (.next iter2)]
-            (mismatch MISSING v2 i)))))))
+            (mismatch MISSING v2 :list-list-miss-left i)))))))
 
 
 ;;
