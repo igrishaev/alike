@@ -10,9 +10,7 @@
 
 
 (defprotocol IMismatch
-  (push-level [this level])
-  (explain [this])
-  (represent [this]))
+  (-push [this level]))
 
 (defprotocol IRepr
   (-repr [this]))
@@ -65,10 +63,11 @@
                      -tag
                      -path]
   IMismatch
-  (push-level [_this level]
+  (-push [_this level]
     (new Mismatch -expected -actual -tag (cons level -path)))
 
-  (represent [this]
+  IRepr
+  (-repr [this]
     (with-out-str
       (println (-explain this))
       (printf "  case %s%n" -tag)
@@ -262,7 +261,7 @@
        (if-let [[_ v2] (find m2 k)]
          (let [result (match v1 v2)]
            (if (mismatch? result)
-             (reduced (push-level result k))
+             (reduced (-push result k))
              acc))
          (reduced (mismatch k MISSING -tag))))
      true
@@ -293,7 +292,7 @@
                 v2 (.next iter2)
                 result (match v1 v2)]
             (if (mismatch? result)
-              (push-level result i)
+              (-push result i)
               (recur (inc i))))
 
           [true false]

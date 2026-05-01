@@ -13,7 +13,7 @@
              result#
 
              representation#
-             (alike/represent result#)
+             (alike/-repr result#)
 
              message#
              (str ~msg
