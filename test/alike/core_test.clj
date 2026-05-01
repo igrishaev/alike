@@ -181,7 +181,82 @@
   {:foo {:bar [1 2 {:aaa nil} 4 5 ]}})
 
 
+(def STRESS-DATA
+  {:nil                   nil
+   :true                  true
+   :false                 false
+   :false-boxed (Boolean. false)
+
+   :char      \ಬ
+   :str-short "ಬಾ ಇಲ್ಲಿ ಸಂಭವಿಸ"
+   :str-long  (reduce str (range 1024))
+   :kw        :keyword
+   :kw-ns     ::keyword
+   :sym       'foo
+   :sym-ns    'foo/bar
+   :kw-long   (keyword (reduce str "_" (range 128)) (reduce str "_" (range 128)))
+   :sym-long  (symbol  (reduce str "_" (range 128)) (reduce str "_" (range 128)))
+
+   :byte      (byte   16)
+   :short     (short  42)
+   :integer   (int    3)
+   :long      (long   3)
+   :float     (float  3.1415926535897932384626433832795)
+   :double    (double 3.1415926535897932384626433832795)
+   :bigdec    (bigdec 3.1415926535897932384626433832795)
+   :bigint    (bigint  31415926535897932384626433832795)
+   :ratio     22/7
+
+   :list      (list 1 2 3 4 5 (list 6 7 8 (list 9 10 (list) ())))
+   :vector    [1 2 3 4 5 [6 7 8 [9 10 [[]]]]]
+   :subvec    (subvec [1 2 3 4 5 6 7 8] 2 8)
+   :map       {:a 1 :b 2 :c 3 :d {:e 4 :f {:g 5 :h 6 :i 7 :j {{} {}}}}}
+   :map-entry (clojure.lang.MapEntry/create "key" "val")
+   :set       #{1 2 3 4 5 #{6 7 8 #{9 10 #{#{}}}}}
+   :meta      (with-meta {:a :A} {:metakey :metaval})
+   :nested    [#{{1 [:a :b] 2 [:c :d] 3 [:e :f]} [#{{[] ()}}] #{:a :b}}
+               #{{1 [:a :b] 2 [:c :d] 3 [:e :f]} [#{{[] ()}}] #{:a :b}}
+               [1 [1 2 [1 2 3 [1 2 3 4 [1 2 3 4 5 "ಬಾ ಇಲ್ಲಿ ಸಂಭವಿಸ"] {} #{} [] ()]]]]]
+
+   :regex          #"^(https?:)?//(www\?|\?)?"
+   :sorted-set     (sorted-set 1 2 3 4 5)
+   :sorted-map     (sorted-map :b 2 :a 1 :d 4 :c 3)
+   :lazy-seq-empty (map identity ())
+   :lazy-seq       (repeatedly 64 #(do nil))
+   :queue          (into clojure.lang.PersistentQueue/EMPTY [:a :b :c :d :e :f :g])
+   :queue-empty          clojure.lang.PersistentQueue/EMPTY
+
+   :uuid       (java.util.UUID. 7232453380187312026 -7067939076204274491)
+   :uri        (java.net.URI. "https://clojure.org")
+   :bytes      (byte-array   [(byte 1) (byte 2) (byte 3)])
+   :objects    (object-array [1 "two" {:data "data"}])
+
+   :util-date (java.util.Date. 1577884455500)
+   :sql-date  (java.sql.Date.  1577884455500)
+   :instant   (java.time.Instant/parse "2020-01-01T13:14:15.50Z")
+   :duration  (java.time.Duration/ofSeconds 100 100)
+   :period    (java.time.Period/of 1 1 1)
+
+   :throwable (Throwable. "Msg")
+   :exception (Exception. "Msg")
+   :ex-info   (ex-info    "Msg" {:data "data"})
+
+   :many-longs    (vec (repeatedly 512         #(rand-nth (range 10))))
+   :many-doubles  (vec (repeatedly 512 #(double (rand-nth (range 10)))))
+   :many-strings  (vec (repeatedly 512         #(rand-nth ["foo" "bar" "baz" "qux"])))
+   :many-keywords (vec (repeatedly 512
+                                   #(keyword
+                                     (rand-nth ["foo" "bar" "baz" "qux" nil])
+                                     (rand-nth ["foo" "bar" "baz" "qux"    ]))))})
+
+
 (deftest test-foo
+
+  (is (alike (assoc STRESS-DATA :lazy-seq 1)
+             STRESS-DATA
+             ))
+
+  #_
   (is (alike {:foo {:bar [1 2 {:aaa 42} 4 5 ]}}
              (get-data)
 
