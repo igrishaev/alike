@@ -1,6 +1,5 @@
 (ns alike.core-test
   (:require
-   [alike.test]
    [clojure.test :refer [are is deftest testing]]
    [alike.core :as alike]))
 
@@ -22,6 +21,9 @@
     1 1.0
     1.0 1
     1 2
+    (atom 42) nil
+    nil (atom 42)
+    (atom 42) +
     "b" "a"
     false true
     false true
@@ -140,7 +142,6 @@
     {:a 1} {:a 1}
     {:a 1} {:a 1 :b 2}
     {:a [{:b 2}]} {:a [{:b 2}]}
-    ;; :foo {:foo 1}
     {:a 1} (new MyRecord 1 2 3)
     {:a 1 :b 2} (new MyRecord 1 2 3)
     (new MyRecord 1 2 3) {:a 1 :b 2 :c 3}
@@ -151,6 +152,7 @@
     {:a 1} {:a 2}
     {:a 1 :b nil} {:a 1 :b 2}
     {:foo 1} :foo
+    :foo {:foo 1}
     (seq {:a 1}) {:a 1}
     {:a 1} (seq {:a 1})
     (new MyRecord 1 2 3) {:a 1 :b 2}))
@@ -159,6 +161,7 @@
   (are [a b] (true? (alike/match a b))
     #{1 2 3} #{1 2 3}
     #{} #{}
+    #{1 2 nil} nil
     #{1} (java-set [1])
     (java-set [1]) #{1}
     #{1 2 3} 2)
@@ -173,113 +176,83 @@
   (are [a b] (true? (alike/match a b))
     [1 2 3] (object-array [1 2 3])
     [1 2 3] (int-array [1 2 3])
-    [1 2 3] (long-array [1 2 3])
+    [1 2 3] (long-array [1 2 3])))
+
+(deftest test-regex
+  (are [a b] (true? (alike/match a b))
+    #"\d+" "abc234asdf")
+
+  (are [a b] (alike/mismatch? (alike/match a b))
+    #"\d+" "abcasdf"))
+
+
+(deftest test-string
+  (are [a b] (true? (alike/match a b))
+    "bar" "foo bar baz"
+    (alike/count 3) "abc")
+
+  (are [a b] (alike/mismatch? (alike/match a b))
+    "bar" "foo BAR baz"
+    (alike/count 3) "abcd"))
+
+
+(deftest test-nested-list
+  (let [exp
+        {:a {:b {:c [1 2 {:d [2 3 4]} 4 5]}}}
+
+        act
+        {:a {:b {:c [1 2 {:d [2 9 4]} 4 5]}}}
+
+        result
+        (alike/match exp act)
+
+        path
+        [:a :b :c 2 :d 1]]
+
+    (is (= 3 (get-in exp path)))
+
+    (is (= {:-expected 3
+            :-actual 9
+            :-tag :object-object
+            :-path path}
+           (into {} result)))
+
+    (is (= "The expected value =/= actual value
+  case :object-object
+  path [:a :b :c 2 :d 1]
+  expected: 3
+  actual: 9
+"
+           (alike/-repr result)))))
+
+
+(deftest test-repr
+  (are [a b] (= (alike/-repr a) b)
+    + "clojure.core/+"
+    1 "1"
+    nil "nil"
+    alike/MISSING "<missing>"
+    Integer "java.lang.Integer"
+    (repeat 100 100500) "(100500 100500 100500 100500 100500 100500 100500 100500 100500 100500..."))
+
+
+(deftest test-explain
+
+  (are [exp act msg] (= msg (alike/-explain (alike/match exp act)))
+
+    1 2
+    "The expected value =/= actual value"
+
+    {:foo 1} {:foo 2}
+    "The expected value =/= actual value"
+
+    {:foo 1 :bar 2} {:foo 1}
+    "The expected map has a key ':bar' which is missing in the actual map"
+
+    nil (new Object)
+    "Expected nil but got an instance of java.lang.Object"
+
+    java.util.UUID :dunno
+    "Expected is an instance of java.util.UUID but got clojure.lang.Keyword"
+
     ))
-
-
-(defn get-data []
-  {:foo {:bar [1 2 {:aaa nil} 4 5 ]}})
-
-
-(def STRESS-DATA
-  {:nil                   nil
-   :true                  true
-   :false                 false
-   :false-boxed (Boolean. false)
-
-   :char      \ಬ
-   :str-short "ಬಾ ಇಲ್ಲಿ ಸಂಭವಿಸ"
-   :str-long  (reduce str (range 1024))
-   :kw        :keyword
-   :kw-ns     ::keyword
-   :sym       'foo
-   :sym-ns    'foo/bar
-   :kw-long   (keyword (reduce str "_" (range 128)) (reduce str "_" (range 128)))
-   :sym-long  (symbol  (reduce str "_" (range 128)) (reduce str "_" (range 128)))
-
-   :byte      (byte   16)
-   :short     (short  42)
-   :integer   (int    3)
-   :long      (long   3)
-   :float     (float  3.1415926535897932384626433832795)
-   :double    (double 3.1415926535897932384626433832795)
-   :bigdec    (bigdec 3.1415926535897932384626433832795)
-   :bigint    (bigint  31415926535897932384626433832795)
-   :ratio     22/7
-
-   :list      (list 1 2 3 4 5 (list 6 7 8 (list 9 10 (list) ())))
-   :vector    [1 2 3 4 5 [6 7 8 [9 10 [[]]]]]
-   :subvec    (subvec [1 2 3 4 5 6 7 8] 2 8)
-   :map       {:a 1 :b 2 :c 3 :d {:e 4 :f {:g 5 :h 6 :i 7 :j {{} {}}}}}
-   :map-entry (clojure.lang.MapEntry/create "key" "val")
-   :set       #{1 2 3 4 5 #{6 7 8 #{9 10 #{#{}}}}}
-   :meta      (with-meta {:a :A} {:metakey :metaval})
-   :nested    [#{{1 [:a :b] 2 [:c :d] 3 [:e :f]} [#{{[] ()}}] #{:a :b}}
-               #{{1 [:a :b] 2 [:c :d] 3 [:e :f]} [#{{[] ()}}] #{:a :b}}
-               [1 [1 2 [1 2 3 [1 2 3 4 [1 2 3 4 5 "ಬಾ ಇಲ್ಲಿ ಸಂಭವಿಸ"] {} #{} [] ()]]]]]
-
-   :regex          #"^(https?:)?//(www\?|\?)?"
-   :sorted-set     (sorted-set 1 2 3 4 5)
-   :sorted-map     (sorted-map :b 2 :a 1 :d 4 :c 3)
-   :lazy-seq-empty (map identity ())
-   :lazy-seq       (repeatedly 64 #(do nil))
-   :queue          (into clojure.lang.PersistentQueue/EMPTY [:a :b :c :d :e :f :g])
-   :queue-empty          clojure.lang.PersistentQueue/EMPTY
-
-   :uuid       (java.util.UUID. 7232453380187312026 -7067939076204274491)
-   :uri        (java.net.URI. "https://clojure.org")
-   :bytes      (byte-array   [(byte 1) (byte 2) (byte 3)])
-   :objects    (object-array [1 "two" {:data "data"}])
-
-   :util-date (java.util.Date. 1577884455500)
-   :sql-date  (java.sql.Date.  1577884455500)
-   :instant   (java.time.Instant/parse "2020-01-01T13:14:15.50Z")
-   :duration  (java.time.Duration/ofSeconds 100 100)
-   :period    (java.time.Period/of 1 1 1)
-
-   :throwable (Throwable. "Msg")
-   :exception (Exception. "Msg")
-   :ex-info   (ex-info    "Msg" {:data "data"})
-
-   :many-longs    (vec (repeatedly 512         #(rand-nth (range 10))))
-   :many-doubles  (vec (repeatedly 512 #(double (rand-nth (range 10)))))
-   :many-strings  (vec (repeatedly 512         #(rand-nth ["foo" "bar" "baz" "qux"])))
-   :many-keywords (vec (repeatedly 512
-                                   #(keyword
-                                     (rand-nth ["foo" "bar" "baz" "qux" nil])
-                                     (rand-nth ["foo" "bar" "baz" "qux"    ]))))})
-
-
-(deftest test-foo
-
-  (is (alike (assoc STRESS-DATA :lazy-seq 1)
-             STRESS-DATA
-             ))
-
-  #_
-  (is (alike {:foo {:bar [1 2 {:aaa 42} 4 5 ]}}
-             (get-data)
-
-             )
-      "foo bar baz"
-      )
-  )
-
-
-
-;; arrays
-;; check representation
-
-;; add hint/reason message
-;; add matching options
-;; toString method -> function
-;; better repr for functions
-;; add test report (is (alike )
-;; any-of, none-of, count, other helpers?
-;; starts-with, ends-with, contains? regex?
-;; regex string
-
-;; mismatch: metter fn representation
-;; mismatch: missing repr
-;; set contains nil
-;; move test.ns to the core

@@ -1,10 +1,33 @@
-(defproject alike "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
-            :url "https://www.eclipse.org/legal/epl-2.0/"}
-  :dependencies [[org.clojure/clojure "1.11.1"]]
-  :main ^:skip-aot alike.core
-  :target-path "target/%s"
-  :profiles {:uberjar {:aot :all
-                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
+(defproject com.github.igrishaev/alike "0.1.0-SNAPSHOT"
+
+  :description
+  "A simple matching library. Humaneness included"
+
+  :url
+  "https://github.com/igrishaev/alike"
+
+  :license
+  {:name "The Unlicense"
+   :url "https://choosealicense.com/licenses/unlicense/"}
+
+  :managed-dependencies
+  [[org.clojure/clojure "1.11.1"]]
+
+  :dependencies
+  [[org.clojure/clojure :scope "provided"]]
+
+  :release-tasks
+  [["vcs" "assert-committed"]
+   ["test"]
+   ["change" "version" "leiningen.release/bump-version" "release"]
+   ["vcs" "commit"]
+   ["vcs" "tag" "--no-sign"]
+   ["deploy"]
+   ["change" "version" "leiningen.release/bump-version"]
+   ["vcs" "commit"]
+   ["vcs" "push"]]
+
+  :profiles
+  {:dev
+   {:dependencies
+    [[org.clojure/clojure]]}})

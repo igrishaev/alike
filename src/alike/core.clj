@@ -1,7 +1,15 @@
 (ns alike.core
+  (:refer-clojure :exclude [count])
   (:require
    [clojure.data :as data]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [clojure.test :as test]))
+
+;; docstrings
+;; readme & toc
+;; release
+
+(alias 'cc 'clojure.core)
 
 
 (deftype Missing [])
@@ -31,7 +39,7 @@
   java.lang.Object
   (-repr [this]
     (let [-result (pr-str this)]
-      (if (> (count -result) REPR_LIMIT)
+      (if (> (cc/count -result) REPR_LIMIT)
         (-> -result (subs 0 REPR_LIMIT) (str "..."))
         -result)))
 
@@ -128,8 +136,9 @@
     [a b]
     (mismatch a b -tag))
 
-  (defmethod -explain -tag [_]
-    "Expected a non-nil value but got nil"))
+  (defmethod -explain -tag [{:keys [-expected]}]
+    (format "Expected is an instance of %s but actual is nil"
+            (-> -expected class -repr))))
 
 
 (let [-tag :nil-object]
@@ -138,8 +147,9 @@
     [a b]
     (mismatch a b -tag))
 
-  (defmethod -explain -tag [_]
-    "Expected nil but got a non-nil value"))
+  (defmethod -explain -tag [{:keys [-actual]}]
+    (format "Expected nil but got an instance of %s"
+            (-> -actual class -repr))))
 
 
 (defmethod -match [nil nil]
@@ -156,7 +166,7 @@
 
   (defmethod -explain -tag [{:keys [^Class -expected
                                     ^Object -actual]}]
-    (format "Expected an instance of %s but got %s"
+    (format "Expected is an instance of %s but got %s"
             (-repr -expected)
             (-> -actual class -repr))))
 
@@ -183,7 +193,7 @@
         (mismatch func the-nil :func-nil)))
 
   (defmethod -explain -tag [{:keys [-expected]}]
-    (format "The expected function %s has returned a false result for the actual nil value"
+    (format "The expected function %s returned a false result for the actual nil value"
             -expected)))
 
 (let [-tag :func-func]
@@ -252,6 +262,38 @@
   "The expected set misses values presenting in the actual set")
 
 
+(let [-tag :set-nil]
+
+  (defmethod -match [java.util.Set nil]
+    [the-set _]
+    (or (contains? the-set nil)
+        (mismatch the-set nil -tag)))
+
+  (defmethod -explain -tag [_]
+    "The expected set doesn't contain a nil value "))
+
+(let [-tag :regex-string]
+
+  (defmethod -match [java.util.regex.Pattern java.lang.String]
+    [re string]
+    (or (re-find re string)
+        (mismatch re string -tag)))
+
+  (defmethod -explain -tag [_]
+    "The expected regex doesn't match the actual string"))
+
+
+(let [-tag :string-string]
+
+  (defmethod -match [java.lang.String java.lang.String]
+    [string1 string2]
+    (or (str/includes? string2 string1)
+        (mismatch string1 string2 -tag)))
+
+  (defmethod -explain -tag [_]
+    "The actual string doesn't include the expected string"))
+
+
 (let [-tag :map-map]
 
   (defmethod -match [java.util.Map java.util.Map]
@@ -268,7 +310,7 @@
      m1))
 
   (defmethod -explain -tag [{:keys [-expected]}]
-    (format "The expected map misses the key %s which presents in the actual map"
+    (format "The expected map has a key '%s' which is missing in the actual map"
             (-repr -expected))))
 
 
@@ -355,3 +397,56 @@
 (defmethod -match [java.util.List ARRAY_LONG]
   [list array]
   (match list (vec array)))
+
+;;
+;; smart objects
+;;
+
+
+(defrecord Count [-n]
+  IRepr
+  (-repr [_]
+    (format "<count=%s>" -n)))
+
+(defn count [n]
+  (new Count n))
+
+(let [-tag :count-string]
+
+  (defmethod -match [Count java.lang.String]
+    [c ^String string]
+    (or (= (:-n c) (.length string))
+        (mismatch c string -tag)))
+
+  (defmethod -explain -tag [_]
+    "The actual string length doesn't equal the expected count"))
+
+
+;;
+;; clojure.test extension
+;;
+
+(defmethod test/assert-expr 'alike
+  [msg [_ expected actual :as form]]
+  `(let [result# (match ~expected ~actual)]
+     (if (mismatch? result#)
+       (let [{-expected# :-expected
+              -actual# :-actual}
+             result#
+
+             representation#
+             (-repr result#)
+
+             message#
+             (str ~msg
+                  (when ~msg \newline)
+                  representation#)]
+
+         (test/do-report {:type :fail
+                          :message message#
+                          :expected -expected#
+                          :actual -actual#}))
+       (test/do-report {:type :pass
+                        :message ~msg
+                        :expected ~expected
+                        :actual ~actual}))))
