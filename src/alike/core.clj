@@ -8,6 +8,7 @@
 ;; docstrings
 ;; readme & toc
 ;; release
+;; explain tests
 
 (alias 'cc 'clojure.core)
 
