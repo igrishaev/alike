@@ -281,3 +281,5 @@
 
 ;; mismatch: metter fn representation
 ;; mismatch: missing repr
+;; set contains nil
+;; move test.ns to the core
