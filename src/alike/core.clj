@@ -5,10 +5,10 @@
    [clojure.string :as str]
    [clojure.test :as test]))
 
+;; explain tests
 ;; docstrings
 ;; readme & toc
 ;; release
-;; explain tests
 
 (alias 'cc 'clojure.core)
 
@@ -311,7 +311,7 @@
      m1))
 
   (defmethod -explain -tag [{:keys [-expected]}]
-    (format "The expected map has a key '%s' which is missing in the actual map"
+    (format "The expected map has the key %s which is missing in the actual map"
             (-repr -expected))))
 
 
@@ -399,10 +399,10 @@
   [list array]
   (match list (vec array)))
 
-;;
-;; smart objects
-;;
 
+;;
+;; Smart objects
+;;
 
 (defrecord Count [-n]
   IRepr
@@ -420,7 +420,29 @@
         (mismatch c string -tag)))
 
   (defmethod -explain -tag [_]
-    "The actual string length doesn't equal the expected count"))
+    "The actual string length doesn't equal to the expected count"))
+
+
+(let [-tag :count-counted]
+
+  (defmethod -match [Count clojure.lang.Counted]
+    [c counted]
+    (or (= (:-n c) (cc/count counted))
+        (mismatch c counted -tag)))
+
+  (defmethod -explain -tag [_]
+    "The actual number of items doens't equal to the expected count"))
+
+
+(let [-tag :count-nil]
+
+  (defmethod -match [Count nil]
+    [c _]
+    (or (zero? (:-n c))
+        (mismatch c nil -tag)))
+
+  (defmethod -explain -tag [_]
+    "The expected count is not zero, but got nil"))
 
 
 ;;

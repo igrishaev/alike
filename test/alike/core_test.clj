@@ -186,14 +186,20 @@
     #"\d+" "abcasdf"))
 
 
-(deftest test-string
+(deftest test-count
   (are [a b] (true? (alike/match a b))
     "bar" "foo bar baz"
-    (alike/count 3) "abc")
+    (alike/count 3) "abc"
+    (alike/count 3) (list 1 2 3)
+    (alike/count 0) ()
+    (alike/count 0) nil)
 
   (are [a b] (alike/mismatch? (alike/match a b))
     "bar" "foo BAR baz"
-    (alike/count 3) "abcd"))
+    (alike/count 3) "abcd"
+    (alike/count 3) (list 1 2 3 4)
+    (alike/count 1) ()
+    (alike/count 3) nil))
 
 
 (deftest test-nested-list
@@ -247,12 +253,21 @@
     "The expected value =/= actual value"
 
     {:foo 1 :bar 2} {:foo 1}
-    "The expected map has a key ':bar' which is missing in the actual map"
+    "The expected map has the key :bar which is missing in the actual map"
 
     nil (new Object)
     "Expected nil but got an instance of java.lang.Object"
 
     java.util.UUID :dunno
     "Expected is an instance of java.util.UUID but got clojure.lang.Keyword"
+
+    (alike/count 3) "abcd"
+    "The actual string length doesn't equal to the expected count"
+
+    (alike/count 3) [1 2 3 4]
+    "The actual number of items doens't equal to the expected count"
+
+    (alike/count 2) nil
+    "The expected count is not zero, but got nil"
 
     ))
