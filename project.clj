@@ -1,7 +1,7 @@
 (defproject com.github.igrishaev/alike "0.1.0-SNAPSHOT"
 
   :description
-  "A simple matching library. Humaneness included"
+  "A simple matching library"
 
   :url
   "https://github.com/igrishaev/alike"

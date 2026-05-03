@@ -1,18 +1,37 @@
 (ns alike.core
+  "
+  A simple matching library, moslty for tests. Usage:
+
+  (require '[alike.core :as alike]) ;; to extend clojure.test/do-report
+
+  (is (alike {:foo 42} (get-data))
+
+  Extending:
+
+  (defmethod -match [org.test.ExpectedType org.test.ActualType]
+    [expected actual]
+    (or (checking-logic? expected actual)
+        (mismatch set obj :some-unique-tag)))
+
+  (defmethod -explain :some-unique-tag [mismatch]
+    (format <your error %s message %s saying %s what is wrong>
+            ...))
+
+  "
   (:refer-clojure :exclude [count])
   (:require
    [clojure.data :as data]
    [clojure.string :as str]
    [clojure.test :as test]))
 
-;; explain tests
-;; docstrings
+;; substring case
 ;; readme & toc
 ;; release
 
 (alias 'cc 'clojure.core)
 
 
+;; A singleton representing missing values
 (deftype Missing [])
 
 (defonce MISSING (new Missing))
@@ -25,6 +44,9 @@
   (-repr [this]))
 
 
+;;
+;; Custom representation logic
+;;
 (def REPR_LIMIT 70)
 
 (extend-protocol IRepr
@@ -58,15 +80,22 @@
         (str/replace "_BANG_" "!")
         (str/replace "_GT_" ">")
         (str/replace "_LT_" "<")
-        (str/replace "$" "/"))))
+        (str/replace "$" "/")
+        (str/replace "_" "-"))))
 
 
+;; takes a Mismatch object and builds a clear explanation
+;; of what went wrong.
 (defmulti -explain :-tag)
 
 (defmethod -explain :default [_]
   "The expected value doesn't match the actual value (no details provided)")
 
 
+;;
+;; Stores info about non-matching values: expected,
+;; actual, a unique tag, a path.
+;;
 (defrecord Mismatch [-expected
                      -actual
                      -tag
@@ -86,6 +115,9 @@
 
 
 (defn mismatch
+  "
+  Build a Mismatch object in various ways.
+  "
   ([expected actual]
    (mismatch expected actual :default))
 
@@ -99,13 +131,21 @@
 (defn mismatch? [x]
   (instance? Mismatch x))
 
-
+;; A low-level multi-method.
 (defmulti -match
   (fn [a b]
     [(type a) (type b)]))
 
 
-(defn match [expected actual]
+(defn match
+  "
+  A top-level API function to call. Transforms
+  negative results into Mismatch objects. The
+  result is always one of these:
+  - Mismatch
+  - true
+  "
+  [expected actual]
   (let [result (-match expected actual)]
 
     (cond
@@ -119,6 +159,9 @@
       :else
       true)))
 
+;;
+;; Custom cases
+;;
 
 (let [-tag :object-object]
 
@@ -195,7 +238,7 @@
 
   (defmethod -explain -tag [{:keys [-expected]}]
     (format "The expected function %s returned a false result for the actual nil value"
-            -expected)))
+            (-repr -expected))))
 
 (let [-tag :func-func]
 
@@ -297,6 +340,8 @@
 
 (let [-tag :map-map]
 
+  ;; Check if each key from the expected map presents
+  ;; in the actual map. Then match values recursively.
   (defmethod -match [java.util.Map java.util.Map]
     [m1 m2]
     (reduce-kv
@@ -315,6 +360,8 @@
             (-repr -expected))))
 
 
+;; Check one by one using iterators. Fail fast
+;; when one of both is over.
 (defmethod -match [java.util.List java.util.List]
   [l1 l2]
   (let [iter1 (clojure.lang.RT/iter l1)

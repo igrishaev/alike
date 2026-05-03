@@ -249,17 +249,53 @@
     1 2
     "The expected value =/= actual value"
 
+    nil (new Object)
+    "Expected nil but got an instance of java.lang.Object"
+
+    java.util.UUID :dunno
+    "Expected is an instance of java.util.UUID but got clojure.lang.Keyword"
+
+    Integer Float
+    "Expected class java.lang.Integer =/= actual class java.lang.Float"
+
+    + nil
+    "The expected function clojure.core/+ returned a false result for the actual nil value"
+
+    + -
+    "The expected function clojure.core/+ =/= the actual function clojure.core/-"
+
+    int? "test"
+    "The expected function clojure.core/int? returned a false result for the actual value"
+
+    #{1 2 3} :foo
+    "The expected set doesn't contain the actual object"
+
+    #{1 2 3} #{2 3 4}
+    "The expected and the actual sets have different values"
+
+    #{1 2 3} #{2 3}
+    "The expected set has values missing in the actual set"
+
+    #{2 3} #{2 3 4}
+    "The expected set misses values presenting in the actual set"
+
+    #{1 2 3} nil
+    "The expected set doesn't contain a nil value "
+
+    #"abc" "123"
+    "The expected regex doesn't match the actual string"
+
     {:foo 1} {:foo 2}
     "The expected value =/= actual value"
 
     {:foo 1 :bar 2} {:foo 1}
     "The expected map has the key :bar which is missing in the actual map"
 
-    nil (new Object)
-    "Expected nil but got an instance of java.lang.Object"
+    [1 2 3] [1 2]
+    "The expected list has more items than the actual one does"
 
-    java.util.UUID :dunno
-    "Expected is an instance of java.util.UUID but got clojure.lang.Keyword"
+    (list 1 2) [1 2 3]
+    "The expected list has less items than the actual one does"
 
     (alike/count 3) "abcd"
     "The actual string length doesn't equal to the expected count"
@@ -268,6 +304,49 @@
     "The actual number of items doens't equal to the expected count"
 
     (alike/count 2) nil
-    "The expected count is not zero, but got nil"
+    "The expected count is not zero, but got nil"))
 
-    ))
+
+;; demo
+
+(defn func-to-check [item-id]
+  {:response
+   {:data
+    [{:user-id (random-uuid)
+      :title "Item 1"
+      :tags ["foo" "bar"]}
+     {:user-id (random-uuid)
+      :title "Item 2"
+      :tags ["test" "hello"]}
+     {:user-id (random-uuid)
+      :title "Item 3"
+      :tags ["some" "tag"]}]}})
+
+#_
+(deftest test-some-case
+  (is (= {:response
+          {:data
+           [{:tags ["foo" "bar"]
+             :title "Item 1"
+             :user-id #uuid "da659703-54d9-49d6-a2b7-c03933c20c5c"}
+            {:tags ["test" "hello"]
+             :title "Item 2"
+             :user-id #uuid "e54cf28c-8deb-47ff-8392-7bf90d46aa54"}
+            {:tags ["some" "tag"]
+             :title "Item 3"
+             :user-id #uuid "8a554169-5d0b-4881-8150-7b127a6c04e4"}]}}
+         (func-to-check 1))))
+
+(deftest test-some-case
+  (is (alike {:response
+              {:data
+               [{:tags ["foo" "bar"]
+                 :title "Item 1"
+                 :user-id java.util.UUID}
+                {:tags ["test" "hello"]
+                 :title "Item 2"
+                 :user-id java.util.UUID}
+                {:tags ["some" 123] ;; this
+                 :title "Item 3"
+                 :user-id java.util.UUID}]}}
+             (func-to-check 1))))
