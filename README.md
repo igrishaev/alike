@@ -29,13 +29,13 @@ It has no dependencies, pretty simple and extendable.
 Lein:
 
 ~~~clojure
-[com.github.igrishaev/alike "0.1.0-SNAPSHOT"]
+[com.github.igrishaev/alike "0.1.0"]
 ~~~
 
 Deps.edn
 
 ~~~clojure
-com.github.igrishaev/alike {:mvn/version "0.1.0-SNAPSHOT"}
+com.github.igrishaev/alike {:mvn/version "0.1.0"}
 ~~~
 
 ## Rationale
