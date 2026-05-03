@@ -226,11 +226,12 @@ ones. Here is a list of predefined types with their logic:
 | List      | object[] | See above                                                                                             |
 | List      | int[]    | See above                                                                                             |
 | List      | long[]   | See above                                                                                             |
-| Count     | String   | Check if lenfth of the string is equal to `Count.n`                                                   |
-| Count     | Counted  | Check if amount of imtes in Counted is equal to `Count.n`                                             |
-| Substring | String   | Check if the actual string inludes a substring (via `clojure.string/includes?`)                       |
+| Count     | String   | Check if length of the string is equal to `Count.n`                                                   |
+| Count     | Counted  | Check if amount of items in Counted is equal to `Count.n`                                             |
+| Substring | String   | Check if the actual string includes a substring (via `clojure.string/includes?`)                      |
 
-If you think of some other possible cases, please open an issue or a PR.
+If you think of some other possible cases, please open an issue or a PR. Or just
+let me know, and I'll add them.
 
 ## Special objects
 
@@ -295,7 +296,7 @@ by the tag field. Let's provide our own error message for dates:
 
 ~~~clojure
 (defmethod alike.core/-explain :string-local-date [mismatch]
-  (let [{:keys [-expected ;; fiels available
+  (let [{:keys [-expected ;; fields available
                 -actual
                 -path
                 -tag]}
