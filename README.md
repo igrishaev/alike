@@ -12,6 +12,15 @@ It has no dependencies, pretty simple and extendable.
 ## Table of Contents
 
 <!-- toc -->
+
+- [Installation](#installation)
+- [Rationale](#rationale)
+- [Basic Usage](#basic-usage)
+- [Output](#output)
+- [Known Cases](#known-cases)
+- [Extending](#extending)
+- [Other](#other)
+
 <!-- tocstop -->
 
 ## Installation
