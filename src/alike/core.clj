@@ -327,17 +327,6 @@
     "The expected regex doesn't match the actual string"))
 
 
-(let [-tag :string-string]
-
-  (defmethod -match [java.lang.String java.lang.String]
-    [string1 string2]
-    (or (str/includes? string2 string1)
-        (mismatch string1 string2 -tag)))
-
-  (defmethod -explain -tag [_]
-    "The actual string doesn't include the expected string"))
-
-
 (let [-tag :map-map]
 
   ;; Check if each key from the expected map presents
@@ -451,10 +440,14 @@
 ;; Smart objects
 ;;
 
-(defrecord Count [-n]
+(deftype Count [-n]
   IRepr
   (-repr [_]
-    (format "<count=%s>" -n)))
+    (format "<count=%s>" -n))
+
+  clojure.lang.IDeref
+  (deref [_]
+    -n))
 
 (defn count [n]
   (new Count n))
@@ -463,7 +456,7 @@
 
   (defmethod -match [Count java.lang.String]
     [c ^String string]
-    (or (= (:-n c) (.length string))
+    (or (= @c (.length string))
         (mismatch c string -tag)))
 
   (defmethod -explain -tag [_]
@@ -474,7 +467,7 @@
 
   (defmethod -match [Count clojure.lang.Counted]
     [c counted]
-    (or (= (:-n c) (cc/count counted))
+    (or (= @c (cc/count counted))
         (mismatch c counted -tag)))
 
   (defmethod -explain -tag [_]
@@ -485,11 +478,43 @@
 
   (defmethod -match [Count nil]
     [c _]
-    (or (zero? (:-n c))
+    (or (zero? @c)
         (mismatch c nil -tag)))
 
   (defmethod -explain -tag [_]
     "The expected count is not zero, but got nil"))
+
+
+(deftype Substring [-string]
+  IRepr
+  (-repr [_]
+    (format "<substring='%s'>" -string))
+
+  clojure.lang.IDeref
+  (deref [_]
+    -string))
+
+(defn substring [string]
+  (new Substring string))
+
+(let [-tag :substring-string]
+
+  (defmethod -match [Substring java.lang.String]
+    [substring string]
+    (or (str/includes? string @substring)
+        (mismatch substring string -tag)))
+
+  (defmethod -explain -tag [_]
+    "The actual string doesn't include an expected substring"))
+
+(let [-tag :substring-nil]
+
+  (defmethod -match [Substring nil]
+    [substring _]
+    (mismatch substring nil -tag))
+
+  (defmethod -explain -tag [_]
+    "The actual string is nil"))
 
 
 ;;

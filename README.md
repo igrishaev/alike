@@ -18,6 +18,7 @@ It has no dependencies, pretty simple and extendable.
 - [Basic Usage](#basic-usage)
 - [Output](#output)
 - [Matching Cases](#matching-cases)
+- [Special objects](#special-objects)
 - [Extending](#extending)
 - [Other](#other)
 
@@ -207,31 +208,115 @@ dump the whole data.
 The `alike` operator accepts two expressions: the expected and the actual
 ones. Here is a list of predefined types with their logic:
 
-| Expected | Actual   | Description                                                                                           |
-|----------|----------|-------------------------------------------------------------------------------------------------------|
-| Object   | Object   | Compare with the standard =                                                                           |
-| Object   | nil      | Always fail                                                                                           |
-| nil      | Object   | Always fail                                                                                           |
-| Class    | Object   | Check if the object is an instance of the class                                                       |
-| Class    | Class    | Check if two classes are the same                                                                     |
-| function | nil      | Check if `(function nil)` is true                                                                     |
-| function | function | Check if two functions are the same                                                                   |
-| function | Object   | Check if `(function x)` is true                                                                       |
-| Set      | Set      | Check if both sets have the same items                                                                |
-| Set      | nil      | Check if the set has nil                                                                              |
-| String   | String   | Check ... TODO                                                                                        |
-| Pattern  | String   | Check if the string matches the regex pattern (using `re-find`)                                       |
-| Map      | Map      | Check if all keys from the expected map present in the actual map, and their values match recursively |
-| List     | List     | Check if both lists are of the same length (iterating one by one), and their itesm match recursively  |
-| List     | object[] | See above                                                                                             |
-| List     | int[]    | See above                                                                                             |
-| List     | long[]   | See above                                                                                             |
-| Count    | String   | Check if lenfth of the string is equal to `Count.n`                                                   |
-| Count    | Counted  | Check if amount of imtes in Counted is equal to `Count.n`                                             |
+| Expected  | Actual   | Description                                                                                           |
+|-----------|----------|-------------------------------------------------------------------------------------------------------|
+| Object    | Object   | Compare with the standard =                                                                           |
+| Object    | nil      | Always fail                                                                                           |
+| nil       | Object   | Always fail                                                                                           |
+| Class     | Object   | Check if the object is an instance of the class                                                       |
+| Class     | Class    | Check if two classes are the same                                                                     |
+| Fn        | nil      | Check if `(function nil)` is true                                                                     |
+| Fn        | Fn       | Check if two functions are the same                                                                   |
+| Fn        | Object   | Check if `(function x)` is true                                                                       |
+| Set       | Set      | Check if both sets have the same items                                                                |
+| Set       | nil      | Check if the set has nil                                                                              |
+| Pattern   | String   | Check if the string matches the regex pattern (using `re-find`)                                       |
+| Map       | Map      | Check if all keys from the expected map present in the actual map, and their values match recursively |
+| List      | List     | Check if both lists are of the same length (iterating one by one), and their item match recursively   |
+| List      | object[] | See above                                                                                             |
+| List      | int[]    | See above                                                                                             |
+| List      | long[]   | See above                                                                                             |
+| Count     | String   | Check if lenfth of the string is equal to `Count.n`                                                   |
+| Count     | Counted  | Check if amount of imtes in Counted is equal to `Count.n`                                             |
+| Substring | String   | Check if the actual string inludes a substring (via `clojure.string/includes?`)                       |
 
 If you think of some other possible cases, please open an issue or a PR.
 
+## Special objects
+
+Objects like `Count` or `Substring` are provided by Alike and have constructor
+functions named after them:
+
+~~~clojure
+(alike/match (alike/count 3) "abc")
+true
+
+(alike/match (alike/count 3) [1 2 3])
+true
+
+(alike/match (alike/substring "error") "there was an error while...")
+true
+~~~
+
 ## Extending
+
+That's quite easy to define your own matching rules. Say, the expected data has
+text strings like "2026-03-25", but the actual data stores them as `LocalDate`
+instances. You'd like these two values to match:
+
+~~~clojure
+(alike.core/match "2026-03-25" (java.time.LocalDate/parse "2026-03-25"))
+~~~
+
+This won't work and will return a `Mismatch` object storing the debug data:
+
+~~~clojure
+{:-expected "2026-03-25",
+ :-actual #object[java.time.LocalDate 0x6cebab15 "2026-03-25"],
+ :-tag :object-object,
+ :-path nil}
+~~~
+
+Extend the `-match` multimethod as follows:
+
+~~~clojure
+(defmethod alike.core/-match [String java.time.LocalDate]
+  [string local-date]
+  (or (= string (str local-date))
+      (alike.core/mismatch string local-date :string-local-date)))
+~~~
+
+The `-match` multimethod should return any of these:
+- a false/nil value without any details; such response gets wrapped into a
+  general `Mismatch` object.
+- a custom `Mismatch` object using the `mismatch` constructor function;
+- any other true value.
+
+Now the matching will do:
+
+~~~clojure
+(alike.core/match "2026-03-25" (java.time.LocalDate/parse "2026-03-25"))
+true
+~~~
+
+Alike allows to define a custom error message specific to each case. There is
+the `-explain` multimethod which accepts the `Mismatch` object and dispatches it
+by the tag field. Let's provide our own error message for dates:
+
+~~~clojure
+(defmethod alike.core/-explain :string-local-date [mismatch]
+  (let [{:keys [-expected ;; fiels available
+                -actual
+                -path
+                -tag]}
+        mismatch]
+    (format "The actual string date %s doesn't match %s"
+            -expected
+            -actual)))
+~~~
+
+Let's check it out:
+
+~~~clojure
+(println
+  (alike.core/-explain
+    (alike.core/match "2026-03-25"
+                      (java.time.LocalDate/parse "2026-03-20"))))
+
+;; The actual string date 2026-03-25 doesn't match 2026-03-20
+~~~
+
+You'll get this error message during the tests.
 
 ## Other
 

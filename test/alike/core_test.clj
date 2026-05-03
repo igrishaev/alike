@@ -25,6 +25,7 @@
     nil (atom 42)
     (atom 42) +
     "b" "a"
+    "b" "ab"
     false true
     false true
     nil 1
@@ -181,21 +182,25 @@
 (deftest test-regex
   (are [a b] (true? (alike/match a b))
     #"\d+" "abc234asdf")
-
   (are [a b] (alike/mismatch? (alike/match a b))
     #"\d+" "abcasdf"))
 
+(deftest test-strings
+  (are [a b] (true? (alike/match a b))
+    "a" "a"
+    (alike/substring "b") "abc")
+  (are [a b] (alike/mismatch? (alike/match a b))
+    "a" "ab"
+    (alike/substring "b") "axc"))
 
 (deftest test-count
   (are [a b] (true? (alike/match a b))
-    "bar" "foo bar baz"
     (alike/count 3) "abc"
     (alike/count 3) (list 1 2 3)
     (alike/count 0) ()
     (alike/count 0) nil)
 
   (are [a b] (alike/mismatch? (alike/match a b))
-    "bar" "foo BAR baz"
     (alike/count 3) "abcd"
     (alike/count 3) (list 1 2 3 4)
     (alike/count 1) ()
@@ -282,6 +287,9 @@
     #{1 2 3} nil
     "The expected set doesn't contain a nil value "
 
+    "a" "abc"
+    "The expected value =/= actual value"
+
     #"abc" "123"
     "The expected regex doesn't match the actual string"
 
@@ -304,49 +312,55 @@
     "The actual number of items doens't equal to the expected count"
 
     (alike/count 2) nil
-    "The expected count is not zero, but got nil"))
+    "The expected count is not zero, but got nil"
+
+    (alike/substring "b") "axc"
+    "The actual string doesn't include an expected substring"
+
+    (alike/substring "b") nil
+    "The actual string is nil"))
 
 
 ;; demo
+(comment
 
-(defn func-to-check [item-id]
-  {:response
-   {:data
-    [{:user-id (random-uuid)
-      :title "Item 1"
-      :tags ["foo" "bar"]}
-     {:user-id (random-uuid)
-      :title "Item 2"
-      :tags ["test" "hello"]}
-     {:user-id (random-uuid)
-      :title "Item 3"
-      :tags ["some" "tag"]}]}})
+  (defn func-to-check [item-id]
+    {:response
+     {:data
+      [{:user-id (random-uuid)
+        :title "Item 1"
+        :tags ["foo" "bar"]}
+       {:user-id (random-uuid)
+        :title "Item 2"
+        :tags ["test" "hello"]}
+       {:user-id (random-uuid)
+        :title "Item 3"
+        :tags ["some" "tag"]}]}})
 
-#_
-(deftest test-some-case
-  (is (= {:response
-          {:data
-           [{:tags ["foo" "bar"]
-             :title "Item 1"
-             :user-id #uuid "da659703-54d9-49d6-a2b7-c03933c20c5c"}
-            {:tags ["test" "hello"]
-             :title "Item 2"
-             :user-id #uuid "e54cf28c-8deb-47ff-8392-7bf90d46aa54"}
-            {:tags ["some" "tag"]
-             :title "Item 3"
-             :user-id #uuid "8a554169-5d0b-4881-8150-7b127a6c04e4"}]}}
-         (func-to-check 1))))
+  (deftest test-some-case
+    (is (= {:response
+            {:data
+             [{:tags ["foo" "bar"]
+               :title "Item 1"
+               :user-id #uuid "da659703-54d9-49d6-a2b7-c03933c20c5c"}
+              {:tags ["test" "hello"]
+               :title "Item 2"
+               :user-id #uuid "e54cf28c-8deb-47ff-8392-7bf90d46aa54"}
+              {:tags ["some" "tag"]
+               :title "Item 3"
+               :user-id #uuid "8a554169-5d0b-4881-8150-7b127a6c04e4"}]}}
+           (func-to-check 1))))
 
-(deftest test-some-case
-  (is (alike {:response
-              {:data
-               [{:tags ["foo" "bar"]
-                 :title "Item 1"
-                 :user-id java.util.UUID}
-                {:tags ["test" "hello"]
-                 :title "Item 2"
-                 :user-id java.util.UUID}
-                {:tags ["some" 123] ;; this
-                 :title "Item 3"
-                 :user-id java.util.UUID}]}}
-             (func-to-check 1))))
+  (deftest test-some-case
+    (is (alike {:response
+                {:data
+                 [{:tags ["foo" "bar"]
+                   :title "Item 1"
+                   :user-id java.util.UUID}
+                  {:tags ["test" "hello"]
+                   :title "Item 2"
+                   :user-id java.util.UUID}
+                  {:tags ["some" 123] ;; this
+                   :title "Item 3"
+                   :user-id java.util.UUID}]}}
+               (func-to-check 1)))))
