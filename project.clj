@@ -1,4 +1,4 @@
-(defproject com.github.igrishaev/alike "0.1.0"
+(defproject com.github.igrishaev/alike "0.1.0-SNAPSHOT"
 
   :description
   "A simple matching library"
@@ -22,7 +22,7 @@
    ["change" "version" "leiningen.release/bump-version" "release"]
    ["vcs" "commit"]
    ["vcs" "tag" "--no-sign"]
-   ["deploy"]
+   ["deploy" "clojars"]
    ["change" "version" "leiningen.release/bump-version"]
    ["vcs" "commit"]
    ["vcs" "push"]]
