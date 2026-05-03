@@ -103,7 +103,7 @@ Let's consider the following case. You have a function you'd like to test:
 
 As this function returns random data (UUID, for example), it would be impossible
 to blindly use `(is (= ...))`. But even if those user-id fields were static, the
-standard `(is (= ...))` is quite noisy. Let's see at a typical test:
+standard `(is (= ...))` would be noisy. Let's check out a typical test:
 
 ~~~clojure
 (deftest test-some-case
@@ -203,6 +203,24 @@ deepest case and the path. Above, the cause of mismatch lurks on the
 This is the primary point of Alike: report only the deepest difference and never
 dump the whole data.
 
+The library provides clear error messages for all known cases. For example, this
+is what you'll get when matching two deeply nested data structures:
+
+~~~clojure
+(println
+  (alike/-repr
+    (alike/match {:foo {:bar [1 2 {:data {:user-id java.util.UUID}} 4 5]}}
+                 {:foo {:bar [1 2 {:data {:user-id 42}} 4 5]}})))
+~~~
+
+~~~text
+Expected is an instance of java.util.UUID but got java.lang.Long
+  case :class-object
+  path [:foo :bar 2 :data :user-id]
+  expected: java.util.UUID
+  actual: 42
+~~~
+
 ## Matching Cases
 
 The `alike` operator accepts two expressions: the expected and the actual
@@ -290,9 +308,9 @@ Now the matching will do:
 true
 ~~~
 
-Alike allows to define a custom error message specific to each case. There is
-the `-explain` multimethod which accepts the `Mismatch` object and dispatches it
-by the tag field. Let's provide our own error message for dates:
+Alike allows to define a custom error message for each case. There is the
+`-explain` multimethod which accepts the `Mismatch` object and dispatches it by
+the tag field. Let's provide our own error message for dates:
 
 ~~~clojure
 (defmethod alike.core/-explain :string-local-date [mismatch]
